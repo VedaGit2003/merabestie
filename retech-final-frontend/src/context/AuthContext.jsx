@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }) => {
 
   // Axios instance with default configurations
   const api = axios.create({
-    baseURL: 'https://api.merabestie.com', // Backend URL
+    baseURL: 'http://localhost:5000', // Backend URL
     withCredentials: true, // Include cookies in requests
   });
 

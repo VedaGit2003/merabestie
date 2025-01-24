@@ -4,6 +4,12 @@ import Navbar from "../../components/user/navbar/navbar";
 import Footer from "../../components/user/footer/footer";
 import SEOComponent from '../../components/SEO/SEOComponent';
 // import { handleCheckout } from '../../components/user/cart/Cartitems';
+import Cart from "./cart"; // Import the Cart component
+import { Link } from "react-router-dom";
+// import { FaStar } from "react-icons/fa";
+import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import CartItems from "../../components/user/cart/Cartitems";
 
 
 const ScrollProgress = () => {
@@ -84,62 +90,144 @@ const HomePage = ({ handleCheckout }) => {
     return () => clearInterval(timer);
   }, []);
 
-  
-  const ProductGrid = ({ title, products }) => (
-    <section className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">{title}</h2>
-        <a href="/shop">
-          <button className="bg-pink-100 text-pink-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-pink-200 transition-colors">
-            View All
-          </button>
-        </a>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        {products.map((product, index) => (
-          <a href="/cart" key={index} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow transform hover:-translate-y-1 relative">
-            <div className="relative">
-              <img
-                src={product.img[0]}
-                alt={product.name}
-                className="w-full h-48 object-cover"
-              />
-              <button className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 hover:bg-opacity-75 text-white opacity-0 hover:opacity-100 transition-opacity">
-                Shop Now
-              </button>
-            </div>
-            <div className="p-4">
-              <h3 className="font-medium mb-2">{product.name}</h3>
-              <div className="flex items-center justify-between mt-2">
-                <span className="text-sm">₹{product.price}</span>
-                <div className="flex items-center">
-                  <FaStar className="text-yellow-400 mr-1" />
-                  <span className="text-sm">{product.rating}</span>
-                </div>
-              </div>
 
-              <div className="mt-4 flex space-x-4">
-                 <button className="bg-indigo-500 text-white px-3 py-1 rounded-md text-sm hover:bg-indigo-600">
-                   Add to Cart
-                 </button>
-                 {/* <button className="bg-orange-500 text-white px-3 py-1 rounded-md text-sm hover:bg-orange-600">
-                   Buy Now
-                 </button> */}
-                  <button className="bg-orange-500 text-white px-3 py-1 rounded-md text-sm hover:bg-orange-600" onClick={handleCheckout} >
+  const ProductGrid = ({ title, products }) => {
+    const [cartVisible, setCartVisible] = useState(false); // State for controlling cart visibility
+    const [cartItems, setCartItems] = useState([]); // State for storing cart items
+  
+    const handleAddToCart = async (product) => {
+      try {
+        // Get or create a cartId for the user
+        let cartId = localStorage.getItem("cartId");
+        if (!cartId) {
+          cartId = "cart_" + Math.random().toString(36).substring(2, 15);
+          localStorage.setItem("cartId", cartId); // Store cartId in localStorage for persistence
+        }
+  
+        const response = await fetch("http://localhost:5000/cart/addtocart", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            cartId, // Send cartId instead of userId
+            productId: product.id, // Adjust based on your product object structure
+            quantity: 1, // Default quantity
+          }),
+        });
+  
+        const data = await response.json();
+        if (data.success) {
+          // alert("Item added to cart successfully!");
+          setCartItems((prevItems) => [...prevItems, product]); // Update cartItems state
+          setCartVisible(true); // Show the cart
+        } else {
+          alert(data.message || "Failed to add item to cart.");
+        }
+      } catch (error) {
+        console.error("Error adding to cart:", error);
+        alert("An error occurred while adding to the cart.");
+      }
+    };
+  
+    const handleBuyNow = async (product) => {
+      try {
+        // Add to cart first
+        await handleAddToCart(product);
+        // Redirect to checkout
+        window.location.href = "/cart";
+      } catch (error) {
+        console.error("Error in Buy Now:", error);
+      }
+    };
+  
+    // Effect to close the cart after 5 minutes
+    // useEffect(() => {
+    //   if (cartVisible) {
+    //     const timer = setTimeout(() => {
+    //       setCartVisible(false);
+    //     }, 300000); // 5 minutes in milliseconds
+    //     return () => clearTimeout(timer); // Clean up the timer if the component is unmounted or cart visibility changes
+    //   }
+    // }, [cartVisible]); // Only run when cartVisible changes
+  
+    return (
+      <section className="container mx-auto px-4 py-8">
+        {/* Cart Sidebar */}
+        {cartVisible && (
+          <div className="fixed top-0 right-0 w-1/4 h-full bg-gray-900 bg-opacity-90 text-white z-50 pt-16"> {/* Add padding-top */}
+            <CartItems cartItems={cartItems} /> {/* Pass cart items to CartItems */}
+            <button
+              onClick={() => setCartVisible(false)} // Close cart when clicked
+              className="absolute top-4 right-4 text-white bg-pink-600 hover:bg-pink-800 p-2 rounded-full"
+            >
+              <FontAwesomeIcon icon={faArrowLeft} />
+            </button>
+          </div>
+        )}
+  
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-semibold">{title}</h2>
+          <a href="/shop">
+            <button className="bg-pink-100 text-pink-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-pink-200 transition-colors">
+              View All
+            </button>
+          </a>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {products.map((product, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow transform hover:-translate-y-1 relative"
+            >
+              <div className="relative">
+                <img
+                  src={product.img[0]}
+                  alt={product.name}
+                  className="w-full h-48 object-cover"
+                />
+                <button className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 hover:bg-opacity-75 text-white opacity-0 hover:opacity-100 transition-opacity">
+                  Shop Now
+                </button>
+              </div>
+              <div className="p-4">
+                <h3 className="font-medium mb-2">{product.name}</h3>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-sm">₹{product.price}</span>
+                  <div className="flex items-center">
+                    <FaStar className="text-yellow-400 mr-1" />
+                    <span className="text-sm">{product.rating}</span>
+                  </div>
+                </div>
+  
+                <div className="mt-4 flex space-x-4">
+                  <button
+                    className="bg-indigo-500 text-white px-3 py-1 rounded-md text-sm hover:bg-indigo-600"
+                    onClick={() => handleAddToCart(product)}
+                  >
+                    Add to Cart
+                  </button>
+                  <button
+                    className="bg-orange-500 text-white px-3 py-1 rounded-md text-sm hover:bg-orange-600"
+                    onClick={() => handleBuyNow(product)}
+                  >
                     Buy Now
                   </button>
-
+                </div>
+              </div>
             </div>
+          ))}
+        </div>
+      </section>
+    );
+  };
 
-            </div>
-          </a>
 
-          
-        ))}
-      </div>
-    </section>
-  );
- 
+  
+  
+
+
+
 // const ProductGrid = ({ title, products }) => {
 //   const handleAddToCart = async (productId) => {
 //     console.log(productId)
