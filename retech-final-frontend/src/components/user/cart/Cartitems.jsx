@@ -6,80 +6,124 @@ import { Link } from 'react-router-dom';
 import Homepage from '../../../pages/user/homepage';
 
 
-const CartItems = () => {
+const CartItems = ({cartItem}) => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [voucher, setVoucher] = useState('');
+
+  const [productDetails, setProductDetails] = useState([]);
   const [discountInfo, setDiscountInfo] = useState({
     code: '',
     percentage: 0,
     message: ''
   });
+  console.log(cartItem)
 
+  // useEffect(() => {
+  //   console.log(cartItems); 
+  //   const fetchCartItems = async () => {
+  //     try {
+  //       // Mock cart data (unchanged)
+  //       const cartData = {
+  //         id: 159252,
+  //         title: "Notebook ",
+  //         body_html: "\u003Cp\u003ECategory: Stationery, Rating: 4.1, Price: 429\u003C/p\u003E",
+  //         vendor: "",
+  //         product_type: "Stationery",
+  //         created_at: "2025-01-17T09:42:14.285Z",
+  //         handle: "notebook-",
+  //         updated_at: "2025-01-17T09:42:14.293Z",
+  //         tags: "",
+  //         status: "active",
+  //         variants: [
+  //           {
+  //             id: 159252,
+  //             title: "Default Variant",
+  //             price: "429",
+  //             sku: "SKU-159252",
+  //             created_at: "2025-01-17T09:42:14.293Z",
+  //             updated_at: "2025-01-17T09:42:14.293Z",
+  //             taxable: true,
+  //             grams: "",
+  //             image: {
+  //               src: "https://i.etsystatic.com/19893040/r/il/0ddcd7/3907960016/il_570xN.3907960016_ej9x.jpg",
+  //             },
+  //             weight: "",
+  //             weight_unit: "",
+  //           },
+  //         ],
+  //         image: {
+  //           src: "https://i.etsystatic.com/19893040/r/il/0ddcd7/3907960016/il_570xN.3907960016_ej9x.jpg",
+  //         },
+  //       };
+    
+  //       // Process the mock cart data
+  //       const products = [
+  //         {
+  //           id: cartData.id,
+  //           title: cartData.title,
+  //           price: cartData.variants[0].price,
+  //           quantity: 1, // Default quantity for mock data
+  //           image: cartData.image.src,
+  //         },
+  //       ];
+    
+  //       // Update state with cart items
+  //       setCartItems(products);
+  //       setLoading(false);
+  //     } catch (err) {
+  //       setError("Error fetching cart items");
+  //       setLoading(false);
+  //     }
+  //   };
+    
+    
+
+  //   fetchCartItems();
+  // }, []);
   useEffect(() => {
-    console.log(cartItems); 
-    const fetchCartItems = async () => {
+    // Function to fetch product details based on cartItems
+    const fetchProductDetails = async () => {
+      setLoading(true); // Set loading state to true when fetching starts
+  
       try {
-        // Mock cart data (unchanged)
-        const cartData = {
-          id: 159252,
-          title: "Notebook ",
-          body_html: "\u003Cp\u003ECategory: Stationery, Rating: 4.1, Price: 429\u003C/p\u003E",
-          vendor: "",
-          product_type: "Stationery",
-          created_at: "2025-01-17T09:42:14.285Z",
-          handle: "notebook-",
-          updated_at: "2025-01-17T09:42:14.293Z",
-          tags: "",
-          status: "active",
-          variants: [
-            {
-              id: 159252,
-              title: "Default Variant",
-              price: "429",
-              sku: "SKU-159252",
-              created_at: "2025-01-17T09:42:14.293Z",
-              updated_at: "2025-01-17T09:42:14.293Z",
-              taxable: true,
-              grams: "",
-              image: {
-                src: "https://i.etsystatic.com/19893040/r/il/0ddcd7/3907960016/il_570xN.3907960016_ej9x.jpg",
-              },
-              weight: "",
-              weight_unit: "",
-            },
-          ],
-          image: {
-            src: "https://i.etsystatic.com/19893040/r/il/0ddcd7/3907960016/il_570xN.3907960016_ej9x.jpg",
-          },
-        };
-    
-        // Process the mock cart data
-        const products = [
-          {
-            id: cartData.id,
-            title: cartData.title,
-            price: cartData.variants[0].price,
-            quantity: 1, // Default quantity for mock data
-            image: cartData.image.src,
-          },
-        ];
-    
-        // Update state with cart items
-        setCartItems(products);
-        setLoading(false);
+        // Fetch all products from the API
+        const response = await fetch("https://api.merabestie.com/get-product");
+        const data = await response.json();
+  
+        // Check the structure of the raw response
+        console.log("Raw API Response:", data.products);
+  
+        if (data.success) {
+          const products = data.products;  // Destructure the products from API response
+  
+          // Map over the cartItems to fetch corresponding products
+          const filteredProducts = products.filter(product => cartItem.includes(product._id));
+  
+          console.log("Filtered Products:", filteredProducts); // Log the filtered products
+  
+          setProductDetails(filteredProducts); // Set filtered product details for the cart items
+        } else {
+          setError("No products found.");
+        }
       } catch (err) {
-        setError("Error fetching cart items");
-        setLoading(false);
+        setError("Error fetching product details");
+      } finally {
+        setLoading(false); // Set loading to false after fetch is done (whether success or error)
       }
     };
-    
-    
-
-    fetchCartItems();
-  }, []);
-
+  
+    // Fetch product details if there are cart items
+    if (cartItem && cartItem.length > 0) {
+      fetchProductDetails();
+    } else {
+      setLoading(false); // No cart items to fetch, stop loading
+    }
+  }, [cartItem]);
+  
+  
+  
   const handleQuantityChange = async (itemId, change) => {
     const item = cartItems.find(item => item._id === itemId);
     const newQuantity = item.quantity + change;
@@ -205,9 +249,10 @@ const CartItems = () => {
     );
   }
 
-  if (error || cartItems.length === 0) {
+  if (error || productDetails.length === 0) {
     return (
       <div className="bg-white shadow-md rounded-lg p-6 flex flex-col items-center justify-center">
+
         <img src={emptyCart} alt="Empty Cart" className="w-48 h-48 mb-4" />
         <p className="text-lg text-gray-600 mb-4">{error || 'Your cart is empty'}</p>
         <Link 
@@ -418,138 +463,133 @@ function transformData(mydata) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white shadow-md rounded-lg">
-        <div className="p-4 border-b">
-          <h2 className="text-xl font-bold text-gray-800">Your Cart</h2>
-        </div>
-        <div className="p-4 space-y-4">
-  {cartItems.map((item) => (
-    <div
-      key={item.id} // Updated to match the mock data's `id` field
-      className="flex flex-col md:flex-row items-center justify-between border-b pb-4 last:border-b-0"
-    >
-      <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 w-full">
-        <div className="w-20 h-20 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
-          <img
-            src={item.img ? item.img[0] || item.img : "https://i.etsystatic.com/19893040/r/il/0ddcd7/3907960016/il_570xN.3907960016_ej9x.jpg"} // Added fallback for missing image
-            alt={item.title} // Changed to match `title` field from mock data
-            className="w-full h-full object-cover"
-          />
-        </div>
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full">
-          <div>
-            <h3 className="font-semibold text-base">{item.title}</h3> {/* Updated to match `title` */}
-            <p className="text-sm text-gray-500">{item.description || "No description available"}</p> {/* Fallback for description */}
-          </div>
-          <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4 w-full mt-4 md:mt-0">
-            <span className="font-medium text-base">₹{item.price}</span>
+  <div className="bg-white shadow-md rounded-lg">
+    <div className="p-4 border-b">
+      <h2 className="text-xl font-bold text-gray-800">Your Cart</h2>
+    </div>
+    <div className="p-4 space-y-4">
+      {productDetails.length > 0 ? (
+        productDetails.map((item) => (
+          <div
+            key={item.productId} // Use `productId` from the product details
+            className="flex flex-col md:flex-row items-center justify-between border-b pb-4 last:border-b-0"
+          >
+            <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 w-full">
+              <div className="w-20 h-20 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
+                <img
+                  src={item.img ? item.img[0] || item.img : "https://i.etsystatic.com/19893040/r/il/0ddcd7/3907960016/il_570xN.3907960016_ej9x.jpg"} 
+                  alt={item.name} // Using name for alt text
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full">
+                <div>
+                  <h3 className="font-semibold text-base">{item.name}</h3> {/* Use name from the product */}
+                  <p className="text-sm text-gray-500">{item.category || "No category available"}</p> {/* Display category or fallback */}
+                </div>
+                <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4 w-full mt-4 md:mt-0">
+                  <span className="font-medium text-base">₹{item.price}</span>
 
-            <div className="flex items-center border rounded-md">
-              <button
-                onClick={() => handleQuantityChange(item.id, -1)} // Updated to match `id`
-                className="px-2 py-1 text-gray-600 hover:bg-gray-100"
-              >
-                <FontAwesomeIcon icon={faMinus} className="text-sm" />
-              </button>
-              <input
-                type="text"
-                value={item.quantity} // Updated to use `quantity` field
-                readOnly
-                className="w-12 text-center border-none text-sm"
-              />
-              <button
-                onClick={() => handleQuantityChange(item.id, 1)} // Updated to match `id`
-                className="px-2 py-1 text-gray-600 hover:bg-gray-100"
-              >
-                <FontAwesomeIcon icon={faPlus} className="text-sm" />
-              </button>
+                  <div className="flex items-center border rounded-md">
+                    <button
+                      onClick={() => handleQuantityChange(item.productId, -1)} // Adjusted to use productId
+                      className="px-2 py-1 text-gray-600 hover:bg-gray-100"
+                    >
+                      <FontAwesomeIcon icon={faMinus} className="text-sm" />
+                    </button>
+                    <input
+                      type="text"
+                      value={item.quantity || 1} // Ensure quantity is either 1 or the correct value
+                      readOnly
+                      className="w-12 text-center border-none text-sm"
+                    />
+                    <button
+                      onClick={() => handleQuantityChange(item.productId, 1)} // Adjusted to use productId
+                      className="px-2 py-1 text-gray-600 hover:bg-gray-100"
+                    >
+                      <FontAwesomeIcon icon={faPlus} className="text-sm" />
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => handleRemoveItem(item.productId)} // Adjusted to use productId
+                    className="text-red-500 hover:text-red-700 transition-colors"
+                  >
+                    <FontAwesomeIcon icon={faTrash} />
+                  </button>
+                </div>
+              </div>
             </div>
-
-            <button
-              onClick={() => handleRemoveItem(item.id)} // Updated to match `id`
-              className="text-red-500 hover:text-red-700 transition-colors"
-            >
-              <FontAwesomeIcon icon={faTrash} />
-            </button>
           </div>
+        ))
+      ) : (
+        <p>Your cart is empty.</p>
+      )}
+    </div>
+  </div>
+
+  <div className="bg-white shadow-md rounded-lg">
+    <div className="p-4 border-b">
+      <h2 className="text-xl font-bold text-gray-800">Order Summary</h2>
+    </div>
+    <div className="p-4 space-y-4">
+      <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-2">
+        <input
+          type="text"
+          placeholder="Enter voucher code"
+          value={voucher}
+          onChange={(e) => setVoucher(e.target.value)}
+          className="flex-grow border rounded-md px-3 py-2"
+        />
+        <button
+          className="w-full md:w-auto bg-pink-500 text-white px-4 py-2 rounded-md hover:bg-pink-600"
+          onClick={handleVoucherRedeem}
+        >
+          Redeem
+        </button>
+      </div>
+      
+      {discountInfo.message && (
+        <div className={`text-sm ${discountInfo.code ? 'text-green-600' : 'text-red-600'}`}>
+          {discountInfo.message}
+        </div>
+      )}
+      
+      <div className="space-y-2 text-sm">
+        <div className="flex flex-col md:flex-row justify-between">
+          <span>Subtotal</span>
+          <span>₹{cartItems.reduce((total, item) =>
+            total + (parseFloat(item.price.replace(/[^\d.]/g, '')) * (item.quantity || 1)), 
+            0).toFixed(2)}</span>
+        </div>
+        {discountInfo.percentage > 0 && (
+          <div className="flex flex-col md:flex-row justify-between text-green-600">
+            <span>Discount ({discountInfo.percentage}%)</span>
+            <span>- ₹{(cartItems.reduce((total, item) => 
+              total + (parseFloat(item.price.replace(/[^\d.]/g, '')) * (item.quantity || 1)), 
+              0) * (discountInfo.percentage / 100)).toFixed(2)}</span>
+          </div>
+        )}
+        <div className="flex flex-col md:flex-row justify-between">
+          <span>Shipping</span>
+          <span>₹ 0.00</span>
+        </div>
+        <div className="flex flex-col md:flex-row justify-between font-bold text-base">
+          <span>Total</span>
+          <span>₹ {calculateTotal()}</span>
         </div>
       </div>
+
+      <button
+        onClick={handleCheckout}
+        className="w-full bg-pink-500 text-white py-2 rounded-md hover:bg-pink-600"
+      >
+        Proceed to Checkout
+      </button>
     </div>
-  ))}
+  </div>
 </div>
 
-      </div>
-
-      <div className="bg-white shadow-md rounded-lg">
-        <div className="p-4 border-b">
-          <h2 className="text-xl font-bold text-gray-800">Order Summary</h2>
-        </div>
-        <div className="p-4 space-y-4">
-          <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-2">
-            <input
-              type="text"
-              placeholder="Enter voucher code"
-              value={voucher}
-              onChange={(e) => setVoucher(e.target.value)}
-              className="flex-grow border rounded-md px-3 py-2"
-            />
-            <button 
-              className="w-full md:w-auto bg-pink-500 text-white px-4 py-2 rounded-md hover:bg-pink-600" 
-              onClick={handleVoucherRedeem}
-            >
-              Redeem
-            </button>
-          </div>
-          
-          {discountInfo.message && (
-            <div className={`text-sm ${discountInfo.code ? 'text-green-600' : 'text-red-600'}`}>
-              {discountInfo.message}
-            </div>
-          )}
-          
-          <div className="space-y-2 text-sm">
-            <div className="flex flex-col md:flex-row justify-between">
-              <span>Subtotal</span>
-              <span>₹{cartItems.reduce((total, item) => 
-                total + (parseFloat(item.price.replace(/[^\d.]/g, '')) * (item.quantity || 1)), 
-                0).toFixed(2)}</span>
-            </div>
-            {discountInfo.percentage > 0 && (
-              <div className="flex flex-col md:flex-row justify-between text-green-600">
-                <span>Discount ({discountInfo.percentage}%)</span>
-                <span>- ₹{(cartItems.reduce((total, item) => 
-                  total + (parseFloat(item.price.replace(/[^\d.]/g, '')) * (item.quantity || 1)), 
-                  0) * (discountInfo.percentage / 100)).toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex flex-col md:flex-row justify-between">
-              <span>Shipping</span>
-              <span>₹ 0.00</span>
-            </div>
-            <div className="flex flex-col md:flex-row justify-between font-bold text-base">
-              <span>Total</span>
-              <span>₹ {calculateTotal()}</span>
-            </div>
-          </div>
-          
-          {/* <Link 
-            to={'/checkout'}
-            state={{
-              total: calculateTotal(),
-              discount: discountInfo.percentage
-            }}
-            className="block"
-          > */}
-            <button 
-            onClick={handleCheckout}
-            className="w-full bg-pink-500 text-white py-2 rounded-md hover:bg-pink-600">
-              Proceed to Checkout
-            </button>
-            <Homepage handleCheckout={handleCheckout} />
-          {/* </Link> */}
-        </div>
-      </div>
-    </div>
   );
 };
 
