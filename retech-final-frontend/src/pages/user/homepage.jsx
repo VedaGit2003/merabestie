@@ -155,6 +155,7 @@ const HomePage = ({ handleCheckout }) => {
         if (data.success) {
           // Update the cart items in the UI and make the cart visible
           setCartItems(existingCart.productsInCart);
+          // console.log(existingCart.productsInCart)
           setCartVisible(true);
           localStorage.setItem("cartItems", JSON.stringify(existingCart.productsInCart)); // Store the updated cart in localStorage
         } else {
@@ -204,7 +205,7 @@ const HomePage = ({ handleCheckout }) => {
       <section className="container mx-auto px-4 py-8">
         {cartVisible && (
           <div className="fixed top-0 right-0 w-1/4 h-full bg-gray-900 bg-opacity-90 text-white z-50 pt-16">
-            <CartItems cartItems={cartItems} />
+            <CartItems cartItem={cartItems} />
             <button
               onClick={() => setCartVisible(false)}
               className="absolute top-4 right-4 text-white bg-pink-600 hover:bg-pink-800 p-2 rounded-full"
